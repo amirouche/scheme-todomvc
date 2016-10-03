@@ -135,7 +135,6 @@
     (render)))
 
 (define *state* `((page . home)
-		  (new . "")
 		  (todos . ((0 . ("Learn Scheme" . #f))))))
 
 ;; login
@@ -191,7 +190,6 @@
 
 (define (new-todo:keypressed state)
   (lambda (event)
-
     (let ((key (event-key event)))
       (if (equal? key "Enter")
 	  (let ((new (event-target-value event))
@@ -199,15 +197,11 @@
 	    (if (null? todos)
 		(begin
 		  (element-empty! (event-target event))  ;; Y U NO CLEAR MY INPUT?!
-		  (alist-set (alist-set state 'todos (acons 0 (cons new #f) '()))
-			   'new
-			   ""))
+		  (alist-set state 'todos (acons 0 (cons new #f) '())))
 		(let ((uid (+ 1 (caar (reverse todos)))))
 		  (element-empty! (event-target event))  ;; Y U NO CLEAR MY INPUT?!
-		  (alist-set (alist-set state 'todos (acons uid (cons new #f) todos))
-			     'new
-			     ""))))
-	  (alist-set state 'new (string-append (event-target-value event) key))))))
+		  (alist-set state 'todos (acons uid (cons new #f) todos)))))
+	  state))))
 
 (define (filters:all state)
   (lambda (event)
@@ -232,7 +226,6 @@
 		    (h1 "todos")
 		    (input (@ (class . "new-todo")
 			      (placeholder . "What needs to be done?")
-			      (value . ,(alist-ref state 'new))
 			      (autofocus . "t")
 			      (on-keypress . ,(make-action new-todo:keypressed)))))
 	    (section (@ (class . "main"))
@@ -263,7 +256,6 @@
 		    (h1 "todos")
 		    (input (@ (class . "new-todo")
 			      (placeholder . "What needs to be done?")
-			      (value . ,(alist-ref state 'new))
 			      (autofocus . "t")
 			      (on-keypress . ,(make-action new-todo:keypressed)))))
 	    (section (@ (class . "main"))
@@ -295,7 +287,6 @@
 		    (h1 "todos")
 		    (input (@ (class . "new-todo")
 			      (placeholder . "What needs to be done?")
-			      (value . ,(alist-ref state 'new))
 			      (autofocus . "t")
 			      (on-keypress . ,(make-action new-todo:keypressed)))))
 	    (section (@ (class . "main"))
