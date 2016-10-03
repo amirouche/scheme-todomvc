@@ -117,8 +117,6 @@
 (define (event-prevent-default event)
   (js-invoke event "preventDefault"))
 
-;; app
-
 ;; FIXME: workaround the fact that ($ "#app") doesn't work
 (define body (car (js-array->list ($ "body"))))
 (define main (element-new '(div "getting started")))
@@ -134,22 +132,10 @@
     (set! *state* (apply (proc *state*) args))
     (render)))
 
+;; app
+
 (define *state* `((page . home)
 		  (todos . ((0 . ("Learn Scheme" . #f))))))
-
-;; login
-
-(define (login:username-changed state)
-  (lambda (event)
-    (let ((username (event-target-value event)))
-      (alist-set state 'username username))))
-
-(define (login:enter-clicked state)
-  (lambda ()
-    (let ((username (alist-ref state 'username)))
-      (if username
-	  `((page . home) (username . ,username))
-	  (alist-set state 'error "a username must be provided")))))
 
 (define (todo:checked todo-uid)
   (lambda (state)
