@@ -56,7 +56,12 @@
 	     (on '())
 	     (out '()))
     (if (null? attrs)
-	(alist->js-obj `(("on" . ,(alist->js-obj on)) ("attrs" . ,(alist->js-obj out))))
+	(if (alist-ref out "key")
+	    (alist->js-obj `(("on" . ,(alist->js-obj on))
+			     ("attrs" . ,(alist->js-obj out))
+			     ("key" . ,(alist-ref out "key"))))
+	    (alist->js-obj `(("on" . ,(alist->js-obj on))
+			     ("attrs" . ,(alist->js-obj out)))))
 	(let ((name (symbol->string (caar attrs)))
 	      (value (cdar attrs)))
 	  (if (string-prefix? "on-" name)
@@ -153,7 +158,8 @@
 	(alist-set state 'todos (alist-delete todos todo-uid))))))
 
 (define (todo:view todo)
-  `(li (@ (class . ,(if (cddr todo) "completed" "")))
+  `(li (@ (class . ,(if (cddr todo) "completed" ""))
+	  (key . ,(car todo)))
        (div (@ (class . "view"))
 	    (input (@ (class . "toggle")
 		      (type . "checkbox")
@@ -302,7 +308,7 @@
   (case (alist-ref state 'page)
     ((home) (home:view state))
     ((active) (active:view state))
-    ((completed) (completed:view state))    
+    ((completed) (completed:view state))
     (else `(h1 "unknown page state"))))
 
 
