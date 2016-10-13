@@ -635,3 +635,9 @@ Here are some approaches to building applications with Snabbdom.
 
 Be sure to share it if you're building an application in another way
 using Snabbdom.
+
+## Snabbdom in the wild
+
+- Vue-js use a fork of snabbdom.
+- [scheme-todomvc](https://github.com/amirouche/scheme-todomvc/) build
+  redux-like architecture on top of snabbdom bindings.
