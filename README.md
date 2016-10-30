@@ -52,7 +52,7 @@ Here is an example action:
 
 Actions are directly bound to events in the sxml. For instance:
 
-```
+```scheme
 (define (view state)
   `(h1 (@ (on-click . ,title-clicked))
        "Héllo World!"))
