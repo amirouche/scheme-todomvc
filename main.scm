@@ -33,6 +33,14 @@
         (let ((other (substring string 0 l)))
           (equal? other prefix)))))
 
+;; async ajax bindings
+
+(define %ajax (js-eval "$.ajax"))
+
+(define (ajax url settings k)
+  (let ((promise (%ajax url (alist->js-obj settings))))
+    (js-invoke promise "always" (js-closure k))))
+
 ;; snabbdom bindings
 
 (define %patch (js-eval "patch"))
