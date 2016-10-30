@@ -1,4 +1,4 @@
-;; scheme helpers
+;;; scheme helpers
 
 (define (pk . args)
   (apply console-log (cons ";;;" args))
@@ -33,15 +33,15 @@
         (let ((other (substring string 0 l)))
           (equal? other prefix)))))
 
-;; async ajax bindings
+;;; async ajax bindings
 
-(define %ajax (js-eval "$.ajax"))
+(define $ (js-eval "jQuery"))
 
 (define (ajax url settings k)
-  (let ((promise (%ajax url (alist->js-obj settings))))
+  (let ((promise (js-invoke $ "ajax" url (alist->js-obj settings))))
     (js-invoke promise "always" (js-closure k))))
 
-;; snabbdom bindings
+;;; snabbdom bindings
 
 (define %patch (js-eval "patch"))
 
@@ -59,7 +59,7 @@
 (define (html tag events children)
   (js-call %html tag events (list->js-array children)))
 
-;; navigo bindings
+;;; navigo bindings
 
 (define (make-navigo root)
   (if (null? root)
@@ -81,7 +81,7 @@
 (define (navigo-resolve navigo)
   (js-invoke navigo "resolve"))
 
-;; FIXME: use biwascheme bindings
+;;; FIXME: use biwascheme bindings
 
 (define (event-target event)
   (js-ref event "target"))
@@ -98,12 +98,7 @@
 (define (event-prevent-default event)
   (js-invoke event "preventDefault"))
 
-;; FIXME: workaround the fact that ($ "#app") doesn't work
-(define body (car (js-array->list ($ "body"))))
-(define container (element-new '(div "getting started")))
-(element-append-child! body container)
-
-;; framework-ish stuff
+;;; framework-ish stuff
 
 (define (attrs->js-obj make-action attrs)
   (let loop ((attrs attrs)
@@ -145,18 +140,29 @@
   (letrec* ((state (init))
             (make-action (lambda (action)
                            (lambda args
-                             (set! state (apply (action state) args))
-                             (render))))
+                             (receive (new effect) (apply (action state) args)
+                               (set! state new)
+                               (render)
+                               ;; apply effect
+                               (unless (null? effect)
+                                 (let ((proc (car effect))
+                                       (args (cadr effect))
+                                       (k (caddr effect)))
+                                   (apply proc (append args (list (make-action k))))))))))
             (sxml->h (sxml->h* make-action))
             (render (lambda ()
                       (set! container (patch container (sxml->h (view state)))))))
     render))
 
-;; app
+;;; app
+
+;; prepare container
+(define body (car (js-array->list ($ "body"))))
+(define container (element-new '(div "getting started")))
+(element-append-child! body container)
 
 (define (init)
-  `((page . home)
-    (todos . ((0 . ("Learn Scheme" . #f))))))
+  `((page . home) (todos . ((0 . ("Learn Scheme" . #f))))))
 
 (define (todo:checked todo-uid)
   (lambda (state)
@@ -164,14 +170,14 @@
       (let ((checked (event-target-checked event)))
         (let* ((todos (alist-ref state 'todos))
                (todo (alist-ref todos todo-uid)))
-          (alist-set state 'todos
-                     (alist-set todos todo-uid (cons (car todo) checked))))))))
+          (values (alist-set state 'todos (alist-set todos todo-uid (cons (car todo) checked)))
+                  '()))))))
 
 (define (todo:destroy-clicked todo-uid)
   (lambda (state)
     (lambda (event)
       (let ((todos (alist-ref state 'todos)))
-        (alist-set state 'todos (alist-delete todos todo-uid))))))
+        (values (alist-set state 'todos (alist-delete todos todo-uid)) '())))))
 
 (define (todo:view todo)
   `(li (@ (class . ,(if (cddr todo) "completed" ""))
@@ -194,7 +200,11 @@
 (define (todos:clear-completed-clicked state)
   (lambda (event)
     (event-prevent-default event)
-    (alist-set state 'todos (todos:active state))))
+    (values (alist-set state 'todos (todos:active state))
+            (list ajax (list "/message.txt" '()) (lambda (state)
+                                                   (lambda (data status _)
+                                                     (pk data)
+                                                     (values state '())))))))
 
 (define (new-todo:keypressed state)
   (lambda (event)
@@ -205,26 +215,26 @@
             (if (null? todos)
                 (begin
                   (element-empty! (event-target event))  ;; Y U NO CLEAR MY INPUT?!
-                  (alist-set state 'todos (acons 0 (cons new #f) '())))
+                  (values (alist-set state 'todos (acons 0 (cons new #f) '())) '()))
                 (let ((uid (+ 1 (caar (reverse todos)))))
                   (element-empty! (event-target event))  ;; Y U NO CLEAR MY INPUT?!
-                  (alist-set state 'todos (acons uid (cons new #f) todos)))))
-          state))))
+                  (values (alist-set state 'todos (acons uid (cons new #f) todos)) '()))))
+          (values state '())))))
 
 (define (filters:all state)
   (lambda (event)
     (event-prevent-default event)
-    (alist-set state 'page 'home)))
+    (values (alist-set state 'page 'home) '())))
 
 (define (filters:active state)
   (lambda (event)
     (event-prevent-default event)
-    (alist-set state 'page 'active)))
+    (values (alist-set state 'page 'active) '())))
 
 (define (filters:completed state)
   (lambda (event)
     (event-prevent-default event)
-    (alist-set state 'page 'completed)))
+    (values (alist-set state 'page 'completed) '())))
 
 ;; home
 
@@ -287,7 +297,6 @@
                     (button (@ (class . "clear-completed")
                                (on-click . ,todos:clear-completed-clicked))
                             "Clear completed"))))
-
 
 (define (completed:view state)
   `(section (@ (class . "todoapp"))
