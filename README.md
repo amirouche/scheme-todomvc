@@ -38,7 +38,8 @@ The entry point is the `app` procedure which takes as arguments the following:
 ### actions
 
 Actions are created from scheme procedure which have the following
-signature: `state -> event -> state`.
+signature: `state -> event -> state`. Hence they return the new 
+state of the application.
 
 Here is an example action:
 
