@@ -8,7 +8,8 @@ This repository host a version of [todomvc](http://todomvc.com/) that
 is powered by [biwascheme interpreter](http://biwascheme.org/), by
 [snabbdom library](https://github.com/snabbdom/snabbdom/) and inspired
 from [react](https://facebook.github.io/react/) /
-[redux](http://redux.js.org/) architecture.
+[redux](http://redux.js.org/) and [elm](https://guide.elm-lang.org/)
+architecture.
 
 biwascheme is a scheme interpreter written in javascript that implements
 r7rs and r6rs. It both works in the browser and in nodejs.
@@ -25,28 +26,14 @@ the global state of the app.
 
 ## How it works
 
-### State
+The entry point is the `app` procedure which takes as arguments the following:
 
-There is a global state (called store in redux) that must be initialized to
-something, for instance:
-
-```scheme
-(define *state* '())
-```
-
-### View
-
-Views are procedures that takes state and return scheme xml (sxml). A global
-`view` procedure is used to bootstrap the rendering of the app.
-
-Here is an example `view` procedure:
-
-```scheme
-(define (view state)
-  `(h1 ,(if (null? state) "Héllo World" state)))
-```
-
-The returned sxml is processed by snabbdom.
+- `container` the dom node that will be used for rendering
+- `init` a procedure that will return the initial state of the app
+- `view` the procedure that takes `state` as argument and will render
+  the application according to that state. It must return sxml-like
+  datastructure with `on-foo` attribute to bind events to callbacks
+  called *actions*.
 
 ### actions
 
@@ -63,12 +50,11 @@ Here is an example action:
 		'())))
 ```
 
-Actions are directly bound to events in the sxml via the `make-action`
-procedure. For instance:
+Actions are directly bound to events in the sxml. For instance:
 
 ```
 (define (view state)
-  `(h1 (@ (on-click . ,(make-action title-clicked)))
+  `(h1 (@ (on-click . ,title-clicked))
        "Héllo World!"))
 ```
 
