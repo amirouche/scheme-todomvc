@@ -137,22 +137,21 @@
                       (map (sxml->h* make-action) (cdr element)))))))))
 
 (define (app container init view)
-  (letrec* ((state (init))
-            (make-action (lambda (action)
-                           (lambda args
-                             (receive (new effect) (apply (action state) args)
-                               (set! state new)
-                               (render)
-                               ;; apply effect
-                               (unless (null? effect)
-                                 (let ((proc (car effect))
-                                       (args (cadr effect))
-                                       (k (caddr effect)))
-                                   (apply proc (append args (list (make-action k))))))))))
-            (sxml->h (sxml->h* make-action))
-            (render (lambda ()
-                      (set! container (patch container (sxml->h (view state)))))))
-    render))
+  (let ((state (init)))
+    (letrec ((make-action (lambda (action)
+                            (lambda args
+                              (receive (new effect) (apply (action state) args)
+                                (set! state new)
+                                (render)
+                                ;; apply effect
+                                (unless (null? effect)
+                                  (let ((proc (car effect))
+                                        (args (cadr effect))
+                                        (k (caddr effect)))
+                                    (apply proc (append args (list (make-action k)))))))))))
+      (lambda ()
+        (set! container (patch container
+                               ((sxml->h* make-action) (view state))))))))
 
 ;;; app
 
